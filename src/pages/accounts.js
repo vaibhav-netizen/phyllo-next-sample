@@ -32,13 +32,9 @@ const Users = () => {
     const userId = localStorage.getItem("PHYLLO_USER_ID");
     if (userId) {
       (async () => {
-        let response = await getAccounts(localStorage.getItem("PHYLLO_USER_ID"));
-        let arr = response;
-        if (arr.length > 0) {
-          let updatedArray = arr.map((obj) => {
-            let flattenedObj = flattenObj(obj);
-            return flattenedObj;
-          });
+        let response = await getAccounts(userId);
+        if (response && response.length > 0) {
+          let updatedArray = response.map((obj) => flattenObj(obj));
           setAccounts(updatedArray);
           setAttributes(updatedArray[0]);
         }
@@ -54,27 +50,22 @@ const Users = () => {
           <thead>
             <tr>
               <th>Attribute</th>
-              {accounts.map((obj, idx) => {
-                return (
-                  <th scope="col" key={idx}>
-                    Account-{idx + 1}
-                  </th>
-                );
-              })}
+              {accounts.map((_, idx) => (
+                <th scope="col" key={idx}>
+                  Account-{idx + 1}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>
-                {Object.entries(attributes).map((obj, idx) => {
-                  let property = obj[0];
-                  return <tr key={idx}>{property}</tr>;
-                })}
-              </td>
-              {accounts.map((obj, idx) => {
-                return <Account accountObj={obj} key={idx} attributes={attributes} />;
-              })}
-            </tr>
+            {Object.entries(attributes).map(([key], idx) => (
+              <tr key={idx}>
+                <td>{key}</td>
+                {accounts.map((account, cIdx) => (
+                  <Account key={cIdx} accountObj={account} attrKey={key} />
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -85,43 +76,35 @@ const Users = () => {
   );
 };
 
-function Account(props) {
-  let account = props.accountObj;
+function Account({ accountObj, attrKey }) {
+  const value = accountObj[attrKey];
 
-  return (
-    <td>
-      {Object.entries(props.attributes).map((obj, idx) => {
-        let key = obj[0];
-        if (key === "profile_pic_url" || key === "work_platform.logo_url") {
-          return (
-            <tr key={idx}>
-              <img src={account[key]} alt="" />
-            </tr>
-          );
-        } else if (key === "status") {
-          return (
-            <tr key={idx}>
-              <div className="status">
-                {account[key]}
-                <div
-                  style={{
-                    width: "10px",
-                    height: "10px",
-                    background: account[key] === "CONNECTED" ? "green" : account[key] === "NOT_CONNECTED" ? "red" : "orange",
-                    borderRadius: "50%",
-                    marginLeft: "10px",
-                  }}
-                ></div>
-              </div>
-            </tr>
-          );
-        } else if (account[key] === undefined) {
-          return <tr>-</tr>;
-        }
-        return <tr key={idx}>{account[key]}</tr>;
-      })}
-    </td>
-  );
+  if (attrKey === "profile_pic_url" || attrKey === "work_platform.logo_url") {
+    return (
+      <td>
+        {value ? <img src={value} alt="" style={{ maxWidth: "50px", borderRadius: "4px" }} /> : "-"}
+      </td>
+    );
+  } else if (attrKey === "status") {
+    return (
+      <td>
+        <div className="status" style={{ display: "flex", alignItems: "center" }}>
+          {value || "-"}
+          <div
+            style={{
+              width: "10px",
+              height: "10px",
+              background: value === "CONNECTED" ? "green" : value === "NOT_CONNECTED" ? "red" : "orange",
+              borderRadius: "50%",
+              marginLeft: "10px",
+            }}
+          ></div>
+        </div>
+      </td>
+    );
+  } else {
+    return <td>{value !== undefined ? value : "-"}</td>;
+  }
 }
 
 export default Users;
